@@ -19,6 +19,8 @@ It features:
 #Environment-based API key security
 
 -> Architecture Diagram
+
+
  ┌──────────────┐       POST /query        ┌────────────────────┐
  │  Frontend UI │  ─────────────────────▶  │   Orchestrator API │
  └──────────────┘                           │  (Flask – port 8000│
