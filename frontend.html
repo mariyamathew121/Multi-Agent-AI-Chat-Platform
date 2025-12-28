@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Multi-Agent Assistant</title>
+
+  <style>
+    /* ---------------- GLOBAL STYLING ---------------- */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #641414;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ---------------- SIDEBAR ---------------- */
+    .sidebar {
+      width: 250px;
+      background: #3b0909;
+      border-right: 1px solid #e5e5e5;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 1.2rem;
+      margin-bottom: 5px;
+    }
+
+    .select-box {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #dcdcdc;
+      font-size: 1rem;
+    }
+
+    .button-clear,
+    .button-export {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+
+    .button-clear {
+      background: #ffeded;
+      color: #d9534f;
+    }
+
+    .button-clear:hover {
+      background: #ffd3d3;
+    }
+
+    .button-export {
+      background: #eef7ff;
+      color: #0275d8;
+    }
+
+    .button-export:hover {
+      background: #d6ecff;
+    }
+
+    /* ---------------- MAIN CHAT AREA ---------------- */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 20px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      border-bottom: 1px solid #e5e5e5;
+      background: #fff;
+    }
+
+    #chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* ---------------- MESSAGE BUBBLES ---------------- */
+    .msg {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 1rem;
+      line-height: 1.5;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #daf1ff;
+      color: #004a75;
+      border-bottom-right-radius: 4px;
+    }
+
+    .agent {
+      align-self: flex-start;
+      background: #ffffff;
+      border: 1px solid #e7e7e7;
+      color: #333;
+      border-bottom-left-radius: 4px;
+    }
+
+    .error {
+      align-self: center;
+      background: #ffe3e3;
+      color: #c0392b;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    /* ---------------- INPUT AREA ---------------- */
+    .input-area {
+      display: flex;
+      padding: 15px;
+      background: #fff;
+      border-top: 1px solid #e5e5e5;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #dcdcdc;
+      outline: none;
+    }
+
+    .input-area input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+    }
+
+    .send-btn,
+    .mic-btn {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .send-btn:hover {
+      background: #0066d1;
+    }
+
+    .mic-btn {
+      background: #aa5e5e;
+    }
+
+    .mic-btn:hover {
+      background: #5a6268;
+    }
+
+    /* ---------------- ANIMATIONS ---------------- */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .typing {
+      display: flex;
+      gap: 6px;
+      padding-left: 5px;
+      margin-top: 5px;
+    }
+
+    .typing div {
+      width: 8px;
+      height: 8px;
+      background: #bbb;
+      border-radius: 50%;
+      animation: blink 1.4s infinite ease-in-out;
+    }
+
+    .typing div:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing div:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+      0% {
+        opacity: 0.2;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.2;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ------------ SIDEBAR ------------ -->
+  <div class="sidebar">
+    <h2>Agent Selector</h2>
+    <select class="select-box" id="agent">
+      <option value="general">General Agent</option>
+      <option value="knowledge">Knowledge Agent</option>
+      <option value="reasoning">Reasoning Agent</option>
+      <option value="summary">Summary Agent</option>
+      <option value="custom">Custom Agent</option>
+    </select>
+
+    <button class="button-clear" onclick="clearChat()">Clear Chat</button>
+    <button class="button-export" onclick="exportChat()">Export Chat</button>
+  </div>
+
+  <!-- ------------ MAIN CHAT AREA ------------ -->
+  <div class="chat-container">
+    <div class="header">🤖 Multi-Agent Assistant</div>
+    <div id="chat-box"></div>
+
+    <div class="input-area">
+      <input id="query" type="text" placeholder="Ask something..." onkeypress="if(event.key === 'Enter') sendQuery()" />
+      <button class="mic-btn" onclick="startVoice()">🎤</button>
+      <button class="send-btn" onclick="sendQuery()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = "http://127.0.0.1:8000/query";
+
+    /* ---------------- TEXT-TO-SPEECH ---------------- */
+    function speak(text) {
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.rate = 1;
+      window.speechSynthesis.speak(speech);
+    }
+
+    /* ---------------- VOICE INPUT ---------------- */
+    function startVoice() {
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.onresult = (e) => {
+        document.getElementById("query").value = e.results[0][0].transcript;
+      };
+      recognition.start();
+    }
+
+    /* ---------------- CLEAR CHAT ---------------- */
+    function clearChat() {
+      document.getElementById("chat-box").innerHTML = "";
+    }
+
+    /* ---------------- EXPORT CHAT ---------------- */
+    function exportChat() {
+      const text = document.getElementById("chat-box").innerText;
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "chat.txt";
+      a.click();
+    }
+
+    /* ---------------- SEND QUERY ---------------- */
+    async function sendQuery() {
+      const input = document.getElementById("query");
+      const chatBox = document.getElementById("chat-box");
+      const query = input.value.trim();
+      const agent = document.getElementById("agent").value;
+
+      if (!query) return;
+
+      chatBox.innerHTML += `<div class="msg user"><b>You:</b> ${query}</div>`;
+      input.value = "";
+
+      const typingEl = document.createElement("div");
+      typingEl.classList.add("msg", "agent");
+      typingEl.innerHTML = `<div class="typing"><div></div><div></div><div></div></div>`;
+      chatBox.appendChild(typingEl);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query,
+            agent
+          }),
+        });
+
+        const data = await res.json();
+        chatBox.removeChild(typingEl);
+
+        const answer = data?.response || data?.result?.answer || data?.answer || "No response";
+
+        chatBox.innerHTML += `<div class="msg agent"><b>Agent:</b> ${answer}</div>`;
+        speak(answer);
+
+      } catch (err) {
+        chatBox.removeChild(typingEl);
+        chatBox.innerHTML += `<div class="msg error">❌ Could not connect to backend</div>`;
+      }
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
+
+</body>
+
+</html>
